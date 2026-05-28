@@ -16,6 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
+
 # =========================================================
 # ESTILOS CSS
 # =========================================================
@@ -171,11 +172,6 @@ st.markdown("""
     .result-text {
         font-size: 17px;
         color: #d1d5db;
-    }
-
-    .small-text {
-        font-size: 13px;
-        color: #b8c7d9;
     }
 
     .normal-text {
@@ -440,6 +436,30 @@ def show_header():
     """, unsafe_allow_html=True)
 
 
+def plot_single_trend(data, variable, title, unit, height=260):
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        y=data[variable],
+        mode="lines+markers",
+        name=title
+    ))
+
+    fig.update_layout(
+        title=f"{title} ({unit})",
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=height,
+        margin=dict(l=20, r=20, t=45, b=20),
+        showlegend=False,
+        xaxis_title="Registro",
+        yaxis_title=unit
+    )
+
+    return fig
+
+
 # =========================================================
 # CARGA DE DATOS Y MODELO
 # =========================================================
@@ -495,7 +515,7 @@ st.sidebar.caption(f"Última actualización: {datetime.now().strftime('%H:%M:%S'
 
 
 # =========================================================
-# VALIDACIÓN DE COLUMNAS DEL DATASET
+# VALIDACIÓN DE COLUMNAS
 # =========================================================
 
 missing_cols = [col for col in MODEL_INPUTS if col not in df.columns]
@@ -524,9 +544,7 @@ if menu == "Inicio":
 
     current = df.iloc[selected_index]
 
-    available_inputs = [col for col in MODEL_INPUTS if col in df.columns]
-
-    if len(available_inputs) == len(MODEL_INPUTS) and model is not None:
+    if all(col in df.columns for col in MODEL_INPUTS) and model is not None:
         X_current = current[MODEL_INPUTS].to_frame().T
         prediction, prob_df, max_probability = get_prediction(model, X_current)
     else:
@@ -598,41 +616,23 @@ if menu == "Inicio":
         start = max(0, selected_index - window)
         trend_df = df.iloc[start:selected_index + 1].copy()
 
-        # =========================
-# GRÁFICAS INDIVIDUALES
-# =========================
+        variables_tendencia = [
+            ("rpm", "RPM", "rpm"),
+            ("outlet_temp", "Temperatura de salida", "°C"),
+            ("water_flow", "Flujo de agua", "L/min")
+        ]
 
-variables_tendencia = [
-    ("rpm", "RPM", "rpm"),
-    ("outlet_temp", "Temperatura de salida", "°C"),
-    ("water_flow", "Flujo de agua", "L/min")
-]
+        for variable, titulo, unidad in variables_tendencia:
+            if variable in trend_df.columns:
+                fig = plot_single_trend(
+                    data=trend_df,
+                    variable=variable,
+                    title=titulo,
+                    unit=unidad,
+                    height=260
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-for variable, titulo, unidad in variables_tendencia:
-
-    if variable in trend_df.columns:
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            y=trend_df[variable],
-            mode="lines+markers",
-            name=titulo
-        ))
-
-        fig.update_layout(
-            title=f"{titulo} ({unidad})",
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            height=260,
-            margin=dict(l=20, r=20, t=45, b=20),
-            showlegend=False,
-            xaxis_title="Registro",
-            yaxis_title=unidad
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with right:
@@ -786,7 +786,7 @@ elif menu == "Monitoreo":
 
     st.markdown('<div class="diagnostic-title">Monitoreo de variables</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="diagnostic-subtitle">Visualización de las variables registradas por el sistema.</div>',
+        '<div class="diagnostic-subtitle">Visualización individual de las variables registradas por el sistema.</div>',
         unsafe_allow_html=True
     )
 
@@ -799,26 +799,22 @@ elif menu == "Monitoreo":
     )
 
     if selected_vars:
-        fig = go.Figure()
+        for variable in selected_vars:
+            unidad = INPUT_UNITS.get(variable, "")
+            titulo = INPUT_LABELS.get(variable, variable)
 
-        for col in selected_vars:
-            fig.add_trace(go.Scatter(
-                y=df[col],
-                mode="lines",
-                name=col
-            ))
+            fig = plot_single_trend(
+                data=df,
+                variable=variable,
+                title=titulo,
+                unit=unidad,
+                height=300
+            )
 
-        fig.update_layout(
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            height=500,
-            margin=dict(l=20, r=20, t=20, b=20)
-        )
+            st.plotly_chart(fig, use_container_width=True)
 
-        st.plotly_chart(fig, use_container_width=True)
-
-    st.dataframe(df[available_cols].head(100), use_container_width=True)
+    st.markdown("### Datos registrados")
+    st.dataframe(df[available_cols].head(100), use_container_width=True, hide_index=True)
 
 
 # =========================================================

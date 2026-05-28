@@ -598,7 +598,7 @@ if menu == "Inicio":
         start = max(0, selected_index - window)
         trend_df = df.iloc[start:selected_index + 1].copy()
 
-        '''fig = go.Figure()
+        fig = go.Figure()
 
         if "rpm" in trend_df.columns:
             fig.add_trace(go.Scatter(
@@ -628,41 +628,6 @@ if menu == "Inicio":
             height=430,
             margin=dict(l=20, r=20, t=20, b=20),
             legend=dict(orientation="h")
-        )
-
-        st.plotly_chart(fig, use_container_width=True)'''
-        # =========================
-# GRÁFICAS INDIVIDUALES
-# =========================
-
-variables_tendencia = [
-    ("rpm", "RPM", "rpm"),
-    ("outlet_temp", "Temperatura de salida", "°C"),
-    ("water_flow", "Flujo de agua", "L/min")
-]
-
-for variable, titulo, unidad in variables_tendencia:
-
-    if variable in trend_df.columns:
-
-        fig = go.Figure()
-
-        fig.add_trace(go.Scatter(
-            y=trend_df[variable],
-            mode="lines+markers",
-            name=titulo
-        ))
-
-        fig.update_layout(
-            title=f"{titulo} ({unidad})",
-            template="plotly_dark",
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            height=260,
-            margin=dict(l=20, r=20, t=45, b=20),
-            showlegend=False,
-            xaxis_title="Registro",
-            yaxis_title=unidad
         )
 
         st.plotly_chart(fig, use_container_width=True)

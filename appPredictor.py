@@ -483,7 +483,7 @@ else:
 
 
 # =========================================================
-# SIDEBAR
+# SIDEBAR GLOBAL
 # =========================================================
 
 st.sidebar.markdown("## ⚙️ PredictPro")
@@ -502,6 +502,19 @@ menu = st.sidebar.radio(
         "Configuración"
     ]
 )
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### Control de lectura")
+
+selected_index = st.sidebar.slider(
+    "Selecciona una lectura",
+    min_value=0,
+    max_value=len(df) - 1,
+    value=len(df) - 1,
+    key="global_selected_index"
+)
+
+current = df.iloc[selected_index]
 
 st.sidebar.markdown("---")
 
@@ -534,15 +547,6 @@ if missing_cols:
 if menu == "Inicio":
 
     show_header()
-
-    selected_index = st.sidebar.slider(
-        "Selecciona una lectura",
-        min_value=0,
-        max_value=len(df) - 1,
-        value=len(df) - 1
-    )
-
-    current = df.iloc[selected_index]
 
     if all(col in df.columns for col in MODEL_INPUTS) and model is not None:
         X_current = current[MODEL_INPUTS].to_frame().T
@@ -804,7 +808,7 @@ elif menu == "Monitoreo":
             titulo = INPUT_LABELS.get(variable, variable)
 
             fig = plot_single_trend(
-                data=df,
+                data=df.iloc[:selected_index + 1],
                 variable=variable,
                 title=titulo,
                 unit=unidad,
@@ -813,8 +817,8 @@ elif menu == "Monitoreo":
 
             st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("### Datos registrados")
-    st.dataframe(df[available_cols].head(100), use_container_width=True, hide_index=True)
+    st.markdown("### Datos registrados hasta la lectura seleccionada")
+    st.dataframe(df.iloc[:selected_index + 1][available_cols].tail(100), use_container_width=True, hide_index=True)
 
 
 # =========================================================
@@ -835,7 +839,7 @@ elif menu == "Diagnóstico":
 
     for col in MODEL_INPUTS:
         if col in df.columns:
-            default_values[col] = float(df[col].iloc[-1])
+            default_values[col] = float(current[col])
         else:
             default_values[col] = 0.0
 
@@ -849,134 +853,32 @@ elif menu == "Diagnóstico":
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            rpm = st.number_input(
-                f"{INPUT_LABELS['rpm']} ({INPUT_UNITS['rpm']})",
-                value=default_values["rpm"],
-                step=10.0
-            )
-
-            motor_power = st.number_input(
-                f"{INPUT_LABELS['motor_power']} ({INPUT_UNITS['motor_power']})",
-                value=default_values["motor_power"],
-                step=0.1
-            )
-
-            torque = st.number_input(
-                f"{INPUT_LABELS['torque']} ({INPUT_UNITS['torque']})",
-                value=default_values["torque"],
-                step=0.1
-            )
-
-            outlet_pressure_bar = st.number_input(
-                f"{INPUT_LABELS['outlet_pressure_bar']} ({INPUT_UNITS['outlet_pressure_bar']})",
-                value=default_values["outlet_pressure_bar"],
-                step=0.1
-            )
-
-            air_flow = st.number_input(
-                f"{INPUT_LABELS['air_flow']} ({INPUT_UNITS['air_flow']})",
-                value=default_values["air_flow"],
-                step=1.0
-            )
+            rpm = st.number_input(f"{INPUT_LABELS['rpm']} ({INPUT_UNITS['rpm']})", value=default_values["rpm"], step=10.0)
+            motor_power = st.number_input(f"{INPUT_LABELS['motor_power']} ({INPUT_UNITS['motor_power']})", value=default_values["motor_power"], step=0.1)
+            torque = st.number_input(f"{INPUT_LABELS['torque']} ({INPUT_UNITS['torque']})", value=default_values["torque"], step=0.1)
+            outlet_pressure_bar = st.number_input(f"{INPUT_LABELS['outlet_pressure_bar']} ({INPUT_UNITS['outlet_pressure_bar']})", value=default_values["outlet_pressure_bar"], step=0.1)
+            air_flow = st.number_input(f"{INPUT_LABELS['air_flow']} ({INPUT_UNITS['air_flow']})", value=default_values["air_flow"], step=1.0)
 
         with col2:
-            noise_db = st.number_input(
-                f"{INPUT_LABELS['noise_db']} ({INPUT_UNITS['noise_db']})",
-                value=default_values["noise_db"],
-                step=0.1
-            )
-
-            outlet_temp = st.number_input(
-                f"{INPUT_LABELS['outlet_temp']} ({INPUT_UNITS['outlet_temp']})",
-                value=default_values["outlet_temp"],
-                step=0.1
-            )
-
-            wpump_outlet_press = st.number_input(
-                f"{INPUT_LABELS['wpump_outlet_press']} ({INPUT_UNITS['wpump_outlet_press']})",
-                value=default_values["wpump_outlet_press"],
-                step=0.1
-            )
-
-            water_inlet_temp = st.number_input(
-                f"{INPUT_LABELS['water_inlet_temp']} ({INPUT_UNITS['water_inlet_temp']})",
-                value=default_values["water_inlet_temp"],
-                step=0.1
-            )
-
-            water_outlet_temp = st.number_input(
-                f"{INPUT_LABELS['water_outlet_temp']} ({INPUT_UNITS['water_outlet_temp']})",
-                value=default_values["water_outlet_temp"],
-                step=0.1
-            )
+            noise_db = st.number_input(f"{INPUT_LABELS['noise_db']} ({INPUT_UNITS['noise_db']})", value=default_values["noise_db"], step=0.1)
+            outlet_temp = st.number_input(f"{INPUT_LABELS['outlet_temp']} ({INPUT_UNITS['outlet_temp']})", value=default_values["outlet_temp"], step=0.1)
+            wpump_outlet_press = st.number_input(f"{INPUT_LABELS['wpump_outlet_press']} ({INPUT_UNITS['wpump_outlet_press']})", value=default_values["wpump_outlet_press"], step=0.1)
+            water_inlet_temp = st.number_input(f"{INPUT_LABELS['water_inlet_temp']} ({INPUT_UNITS['water_inlet_temp']})", value=default_values["water_inlet_temp"], step=0.1)
+            water_outlet_temp = st.number_input(f"{INPUT_LABELS['water_outlet_temp']} ({INPUT_UNITS['water_outlet_temp']})", value=default_values["water_outlet_temp"], step=0.1)
 
         with col3:
-            wpump_power = st.number_input(
-                f"{INPUT_LABELS['wpump_power']} ({INPUT_UNITS['wpump_power']})",
-                value=default_values["wpump_power"],
-                step=0.1
-            )
-
-            water_flow = st.number_input(
-                f"{INPUT_LABELS['water_flow']} ({INPUT_UNITS['water_flow']})",
-                value=default_values["water_flow"],
-                step=0.1
-            )
-
-            oilpump_power = st.number_input(
-                f"{INPUT_LABELS['oilpump_power']} ({INPUT_UNITS['oilpump_power']})",
-                value=default_values["oilpump_power"],
-                step=0.1
-            )
-
-            oil_tank_temp = st.number_input(
-                f"{INPUT_LABELS['oil_tank_temp']} ({INPUT_UNITS['oil_tank_temp']})",
-                value=default_values["oil_tank_temp"],
-                step=0.1
-            )
+            wpump_power = st.number_input(f"{INPUT_LABELS['wpump_power']} ({INPUT_UNITS['wpump_power']})", value=default_values["wpump_power"], step=0.1)
+            water_flow = st.number_input(f"{INPUT_LABELS['water_flow']} ({INPUT_UNITS['water_flow']})", value=default_values["water_flow"], step=0.1)
+            oilpump_power = st.number_input(f"{INPUT_LABELS['oilpump_power']} ({INPUT_UNITS['oilpump_power']})", value=default_values["oilpump_power"], step=0.1)
+            oil_tank_temp = st.number_input(f"{INPUT_LABELS['oil_tank_temp']} ({INPUT_UNITS['oil_tank_temp']})", value=default_values["oil_tank_temp"], step=0.1)
 
         with col4:
-            gaccx = st.number_input(
-                f"{INPUT_LABELS['gaccx']} ({INPUT_UNITS['gaccx']})",
-                value=default_values["gaccx"],
-                step=0.001,
-                format="%.4f"
-            )
-
-            gaccy = st.number_input(
-                f"{INPUT_LABELS['gaccy']} ({INPUT_UNITS['gaccy']})",
-                value=default_values["gaccy"],
-                step=0.001,
-                format="%.4f"
-            )
-
-            gaccz = st.number_input(
-                f"{INPUT_LABELS['gaccz']} ({INPUT_UNITS['gaccz']})",
-                value=default_values["gaccz"],
-                step=0.001,
-                format="%.4f"
-            )
-
-            haccx = st.number_input(
-                f"{INPUT_LABELS['haccx']} ({INPUT_UNITS['haccx']})",
-                value=default_values["haccx"],
-                step=0.001,
-                format="%.4f"
-            )
-
-            haccy = st.number_input(
-                f"{INPUT_LABELS['haccy']} ({INPUT_UNITS['haccy']})",
-                value=default_values["haccy"],
-                step=0.001,
-                format="%.4f"
-            )
-
-            haccz = st.number_input(
-                f"{INPUT_LABELS['haccz']} ({INPUT_UNITS['haccz']})",
-                value=default_values["haccz"],
-                step=0.001,
-                format="%.4f"
-            )
+            gaccx = st.number_input(f"{INPUT_LABELS['gaccx']} ({INPUT_UNITS['gaccx']})", value=default_values["gaccx"], step=0.001, format="%.4f")
+            gaccy = st.number_input(f"{INPUT_LABELS['gaccy']} ({INPUT_UNITS['gaccy']})", value=default_values["gaccy"], step=0.001, format="%.4f")
+            gaccz = st.number_input(f"{INPUT_LABELS['gaccz']} ({INPUT_UNITS['gaccz']})", value=default_values["gaccz"], step=0.001, format="%.4f")
+            haccx = st.number_input(f"{INPUT_LABELS['haccx']} ({INPUT_UNITS['haccx']})", value=default_values["haccx"], step=0.001, format="%.4f")
+            haccy = st.number_input(f"{INPUT_LABELS['haccy']} ({INPUT_UNITS['haccy']})", value=default_values["haccy"], step=0.001, format="%.4f")
+            haccz = st.number_input(f"{INPUT_LABELS['haccz']} ({INPUT_UNITS['haccz']})", value=default_values["haccz"], step=0.001, format="%.4f")
 
         submitted = st.form_submit_button("Generar diagnóstico")
 
@@ -1010,7 +912,6 @@ elif menu == "Diagnóstico":
         input_data = input_data[MODEL_INPUTS]
 
         if model is not None:
-
             try:
                 prediction, prob_df, max_probability = get_prediction(model, input_data)
 
@@ -1024,11 +925,7 @@ elif menu == "Diagnóstico":
                         st.write(f"**{row['Tipo de falla']}**: {row['Probabilidad']:.2%}")
                         st.progress(float(row["Probabilidad"]))
 
-                    st.dataframe(
-                        prob_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
+                    st.dataframe(prob_df, use_container_width=True, hide_index=True)
 
                 with st.expander("Ver datos ingresados al modelo"):
                     st.dataframe(input_data, use_container_width=True, hide_index=True)
@@ -1059,20 +956,39 @@ elif menu == "Alertas":
         unsafe_allow_html=True
     )
 
+    fault = current.get("fault_type", "Normal")
+
     alerts_data = []
 
-    for _, row in df.tail(50).iterrows():
-        fault = row.get("fault_type", "Normal")
+    if fault != "Normal":
+        alerts_data.append({
+            "Lectura": selected_index,
+            "Evento": f"Diagnóstico: {fault}",
+            "Severidad": "Advertencia",
+            "Acción sugerida": "Programar mantenimiento preventivo"
+        })
 
-        if fault != "Normal":
-            alerts_data.append({
-                "Evento": f"Diagnóstico: {fault}",
-                "Severidad": "Advertencia",
-                "Acción sugerida": "Programar mantenimiento preventivo"
-            })
+    outlet_temp = safe_value(current, "outlet_temp")
+    water_flow = safe_value(current, "water_flow")
+
+    if "outlet_temp" in df.columns and outlet_temp > df["outlet_temp"].quantile(0.75):
+        alerts_data.append({
+            "Lectura": selected_index,
+            "Evento": "Aumento de temperatura de salida",
+            "Severidad": "Advertencia",
+            "Acción sugerida": "Inspeccionar sistema de refrigeración"
+        })
+
+    if "water_flow" in df.columns and water_flow < df["water_flow"].quantile(0.25):
+        alerts_data.append({
+            "Lectura": selected_index,
+            "Evento": "Caída del flujo de agua",
+            "Severidad": "Advertencia",
+            "Acción sugerida": "Verificar bomba y líneas de suministro"
+        })
 
     if len(alerts_data) == 0:
-        st.success("No hay alertas activas.")
+        st.success("No hay alertas activas para la lectura seleccionada.")
     else:
         alerts_df = pd.DataFrame(alerts_data)
         st.dataframe(alerts_df, use_container_width=True, hide_index=True)
@@ -1091,6 +1007,8 @@ elif menu == "Histórico":
         '<div class="diagnostic-subtitle">Consulta de registros históricos del compresor.</div>',
         unsafe_allow_html=True
     )
+
+    st.info(f"Lectura seleccionada actualmente: {selected_index}")
 
     st.dataframe(df, use_container_width=True, hide_index=True)
 
@@ -1142,6 +1060,9 @@ elif menu == "Mantenimiento":
         ]
     })
 
+    current_fault = current.get("fault_type", "Normal")
+    st.info(f"Diagnóstico de la lectura seleccionada: {current_fault}")
+
     st.dataframe(maintenance_df, use_container_width=True, hide_index=True)
 
 
@@ -1172,6 +1093,12 @@ elif menu == "Configuración":
         st.error("Modelo no cargado.")
         if model_error:
             st.code(model_error)
+
+    st.markdown("### Lectura seleccionada")
+
+    st.write(f"Índice actual: `{selected_index}`")
+
+    st.dataframe(current.to_frame(name="Valor"), use_container_width=True)
 
     st.markdown("### Variables esperadas por el modelo")
 
